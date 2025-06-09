@@ -98,4 +98,3 @@ if resultados:
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Por favor, ingresa tickers válidos para analizar.")
-  Creación del dashboard financiero
