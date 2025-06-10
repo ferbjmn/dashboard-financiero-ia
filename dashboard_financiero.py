@@ -3,22 +3,29 @@ import yfinance as yf
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Dashboard Financiero Bloomberg Style", layout="wide")
+# Configuración general
+st.set_page_config(page_title="Dashboard Financiero Estilo DeepSeek", layout="wide")
 
-# Estilo oscuro profesional
+# Estética DeepSeek V3
 st.markdown("""
     <style>
-    body {background-color: #0d1117; color: #c9d1d9;}
-    .stApp {background-color: #0d1117;}
-    h1, h2, h3, h4 {color: #58a6ff;}
+    body { background-color: #0d1117; color: #c9d1d9; }
+    .stApp { background-color: #0d1117; font-family: 'Segoe UI', sans-serif; }
+    h1, h2, h3, h4, .markdown-text-container { color: #58a6ff; }
+    .metric-container { padding: 1rem; border-radius: 12px; background-color: #161b22; margin-bottom: 10px; }
+    .metric-label { font-size: 0.8rem; color: #8b949e; }
+    .metric-value { font-size: 1.3rem; font-weight: bold; color: #ffffff; }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center;'>📈 Dashboard Financiero - Estilo Bloomberg</h1>", unsafe_allow_html=True)
+# Título
+st.markdown("<h1 style='text-align: center;'>📊 Dashboard Financiero - Estética DeepSeek V3</h1>", unsafe_allow_html=True)
 
+# Input de Tickers
 tickers_input = st.text_input("🧾 Escribí los tickers separados por coma:", value="AAPL,MSFT,GOOGL")
 tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
 
+# Variables financieras
 rf, rm, kd, tc = 0.04, 0.09, 0.06, 0.25
 resultados = []
 
@@ -54,8 +61,7 @@ for ticker in tickers:
         profit_margin = info.get("profitMargins", 0) * 100 if info.get("profitMargins") else 0
 
         ke = rf + (rm - rf) * info.get("beta", 1)
-        e = capital
-        d = deuda
+        e, d = capital, deuda
         v = e + d
         wacc = ((e/v)*ke) + ((d/v)*kd)*(1 - tc)
         capital_invertido = activos_totales - pasivos_totales
@@ -92,58 +98,53 @@ for ticker in tickers:
     except Exception as e:
         st.warning(f"Error procesando {ticker}: {e}")
 
+# Mostrar
 if resultados:
     df = pd.DataFrame(resultados)
 
-    for i, row in df.iterrows():
-        with st.container():
-            st.markdown("---")
-            cols = st.columns([1, 3, 2, 2, 2, 2])
-            with cols[0]:
-                if row["Logo"]:
-                    st.image(row["Logo"], width=60)
-            with cols[1]:
-                st.markdown(f"### {row['Nombre']}")
-                st.markdown(f"**Sector:** {row['Sector']}  \n**Industria:** {row['Industria']}")
-            with cols[2]:
-                st.metric("💰 Precio", f"${row['Precio']}")
-                st.metric("📊 ROIC", f"{row['ROIC']}%")
-                st.metric("💼 WACC", f"{row['WACC']}%")
-                st.metric("📈 EVA", f"{row['EVA']}")
-                st.metric("🎯 Genera Valor", row["Genera Valor"])
-            with cols[3]:
-                st.metric("🧮 P/E", row["P/E"])
-                st.metric("📘 P/B", row["P/B"])
-                st.metric("💵 P/FCF", row["P/FCF"])
-                st.metric("📅 Div Years", row["Dividend Years"])
-            with cols[4]:
-                st.metric("💹 Div Yield %", f"{row['Dividend Yield %']}%")
-                st.metric("🔁 Payout Ratio", f"{row['Payout Ratio']}%")
-                st.metric("📈 ROA", f"{row['ROA']}%")
-                st.metric("📈 ROE", f"{row['ROE']}%")
-            with cols[5]:
-                st.metric("💧 Current Ratio", row["Current Ratio"])
-                st.metric("🏦 LT Debt/Eq", row["LT Debt/Equity"])
-                st.metric("🏦 Debt/Eq", row["Debt/Equity"])
-                st.metric("📉 Op Margin", f"{row['Operating Margin']}%")
-                st.metric("📉 Profit Margin", f"{row['Profit Margin']}%")
+    for row in df.itertuples():
+        st.markdown("---")
+        col1, col2 = st.columns([1, 6])
+        with col1:
+            if row.Logo:
+                st.image(row.Logo, width=60)
+        with col2:
+            st.markdown(f"### {row.Nombre}")
+            st.markdown(f"**Sector:** {row.Sector}  \n**Industria:** {row.Industria}")
 
-    # Gráfico
+            metrics = [
+                ("💰 Precio", row.Precio),
+                ("📊 ROIC", f"{row.ROIC}%"),
+                ("💼 WACC", f"{row.WACC}%"),
+                ("📈 EVA", row.EVA),
+                ("🧮 P/E", row._9),
+                ("📘 P/B", row._10),
+                ("💵 P/FCF", row._11),
+                ("📅 Div Years", row._12),
+                ("💹 Div Yield %", f"{row._13}%"),
+                ("🔁 Payout Ratio", f"{row._14}%"),
+                ("📈 ROA", f"{row._15}%"),
+                ("📈 ROE", f"{row._16}%"),
+                ("💧 Current Ratio", row._17),
+                ("🏦 LT Debt/Eq", row._18),
+                ("🏦 Debt/Eq", row._19),
+                ("📉 Op Margin", f"{row._20}%"),
+                ("📉 Profit Margin", f"{row._21}%")
+            ]
+
+            rows = [metrics[i:i+6] for i in range(0, len(metrics), 6)]
+            for fila in rows:
+                cols = st.columns(len(fila))
+                for (label, val), col in zip(fila, cols):
+                    col.markdown(f"<div class='metric-container'><div class='metric-label'>{label}</div><div class='metric-value'>{val}</div></div>", unsafe_allow_html=True)
+
     fig = px.scatter(
-        df,
-        x="WACC",
-        y="ROIC",
-        color="Genera Valor",
-        size="Precio",
-        hover_name="Nombre",
-        title="Comparación ROIC vs WACC",
-        template="plotly_dark"
+        df, x="WACC", y="ROIC", color="Genera Valor", size="Precio",
+        hover_name="Nombre", title="Comparación ROIC vs WACC", template="plotly_dark"
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Tabla completa
-    st.markdown("### 📋 Tabla comparativa completa")
+    st.markdown("### 📋 Tabla comparativa")
     st.dataframe(df.drop("Logo", axis=1), use_container_width=True)
-
 else:
     st.info("📌 Ingresá tickers válidos para comenzar el análisis.")
