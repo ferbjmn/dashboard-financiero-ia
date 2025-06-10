@@ -65,4 +65,105 @@ for ticker in tickers:
         ke = rf + (rm - rf) * info.get("beta", 1)
         e, d = capital, deuda
         v = e + d
-        wacc = ((e/v)*ke + (d/v)*kd*(1 -
+        wacc = ((e/v)*ke + (d/v)*kd*(1 - tc)) if v != 0 else 0
+        capital_invertido = activos - pasivos
+        roic = ((ebit - impuestos) / capital_invertido) if capital_invertido != 0 else 0
+        eva = (roic - wacc) * capital_invertido if capital_invertido != 0 else 0
+        genera_valor = "✅ Sí" if eva > 0 else "❌ No"
+
+        resultados.append({
+            "Ticker": ticker,
+            "Nombre": nombre,
+            "Sector": sector,
+            "Industria": industria,
+            "Precio": precio,
+            "ROIC": roic * 100,
+            "WACC": wacc * 100,
+            "EVA": eva,
+            "P/E": pe,
+            "P/B": pb,
+            "P/FCF": pfcf,
+            "Dividend Years": dividend_years,
+            "Dividend Yield %": dividend_yield,
+            "Payout Ratio": payout_ratio,
+            "ROA": roa,
+            "ROE": roe,
+            "Current Ratio": current_ratio,
+            "LT Debt/Equity": lt_debt_eq,
+            "Debt/Equity": debt_eq,
+            "Operating Margin": op_margin,
+            "Profit Margin": profit_margin,
+            "Genera Valor": genera_valor,
+        })
+
+    except Exception as e:
+        st.warning(f"Error procesando {ticker}: {e}")
+
+if resultados:
+    df = pd.DataFrame(resultados)
+
+    for row in df.itertuples():
+        st.markdown(f"### {row.Nombre}")
+        st.markdown(f"**Sector:** {row.Sector}  \n**Industria:** {row.Industria}")
+        datos = [
+            ("💰 Precio", row.Precio),
+            ("📊 ROIC", f"{row.ROIC:.2f}%"),
+            ("📦 WACC", f"{row.WACC:.2f}%"),
+            ("📈 EVA", f"{row.EVA:,.2f}"),
+            ("🧮 P/E", row._9),
+            ("📘 P/B", row._10),
+            ("💵 P/FCF", row._11),
+            ("📅 Div Years", row._12),
+            ("💹 Div Yield %", f"{row._13:.2f}%"),
+            ("🔁 Payout Ratio", f"{row._14:.2f}%"),
+            ("📈 ROA", f"{row._15:.2f}%"),
+            ("📈 ROE", f"{row._16:.2f}%"),
+            ("💧 Current Ratio", row._17),
+            ("🏦 LT Debt/Eq", row._18),
+            ("🏦 Debt/Eq", row._19),
+            ("📉 Op Margin", f"{row._20:.2f}%"),
+            ("📉 Profit Margin", f"{row._21:.2f}%")
+        ]
+        filas = [datos[i:i+6] for i in range(0, len(datos), 6)]
+        for fila in filas:
+            cols = st.columns(len(fila))
+            for (label, val), col in zip(fila, cols):
+                col.markdown(f"<div class='metric-box'><div class='metric-label'>{label}</div><div class='metric-value'>{val}</div></div>", unsafe_allow_html=True)
+        st.markdown("---")
+
+    # Gráfico comparativo tipo GuruFocus
+    st.subheader("📊 Comparación ROIC vs WACC (Estilo GuruFocus)")
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        y=df["Nombre"],
+        x=df["WACC"],
+        name="WACC",
+        orientation='h',
+        marker_color='orange'
+    ))
+
+    fig.add_trace(go.Bar(
+        y=df["Nombre"],
+        x=df["ROIC"],
+        name="ROIC",
+        orientation='h',
+        marker_color='green'
+    ))
+
+    fig.update_layout(
+        barmode='group',
+        xaxis_title="Porcentaje",
+        yaxis_title="Empresa",
+        template="plotly_white",
+        height=400
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Tabla comparativa
+    st.markdown("### 📋 Tabla comparativa")
+    st.dataframe(df.drop(columns=["Genera Valor"]), use_container_width=True)
+
+else:
+    st.info("📌 Ingresá tickers válidos para ver la comparación.")
